@@ -1,5 +1,6 @@
 // Stores relevant structs and packets for the layer 2 of the OSI model.
 const std = @import("std");
+const posix = std.posix;
 const Networking = @import("./networking.zig");
 
 pub const Ethernet2_Header = extern struct {
@@ -14,6 +15,7 @@ pub const Ethernet2_Header = extern struct {
 };
 
 pub const ARP_Packet = extern struct {
+    const ETH_P_ARP: u16 = 0x0806;
     hardware_type: u16,
     protocol_type: u16,
     hardware_length: u8,
@@ -32,5 +34,11 @@ pub const ARP_Packet = extern struct {
         std.debug.print("Source IP: {}\n", .{self.sender_ip});
         std.debug.print("Destination MAC: {}\n", .{self.destination_mac});
         std.debug.print("Destination IP: {}\n", .{self.destination_ip});
+    }
+
+    pub fn send() !void {
+        // const iface_name = "eth0";
+        // const sock = try posix.socket(posix.AF.PACKET, posix.SOCK.RAW, @intCast(std.mem.nativeToBig(u16, ETH_P_ARP)));
+        // defer posix.close(sock);
     }
 };
