@@ -35,10 +35,6 @@ pub const ARP_Packet = extern struct {
         std.debug.print("Destination MAC: {}\n", .{self.destination_mac});
         std.debug.print("Destination IP: {}\n", .{self.destination_ip});
     }
-
-    pub fn send() !void {
-        // const iface_name = "eth0";
-        // const sock = try posix.socket(posix.AF.PACKET, posix.SOCK.RAW, @intCast(std.mem.nativeToBig(u16, ETH_P_ARP)));
-        // defer posix.close(sock);
-    }
 };
+
+pub const ARP_Full_Packet = extern struct { ethernet_header: Ethernet2_Header, arp_packet: ARP_Packet };
