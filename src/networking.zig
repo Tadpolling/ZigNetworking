@@ -18,6 +18,10 @@ pub const MAC_Address = extern struct {
             try writer.print("{x}{s}", .{ mac_segment, if (i < self.address.len - 1) ":" else "" });
         }
     }
+
+    pub fn to_network(self: MAC_Address) []const u8 {
+        return &self.address;
+    }
 };
 
 pub const IP_Address = extern struct {
@@ -35,5 +39,9 @@ pub const IP_Address = extern struct {
         for (self.address, 0..) |ip_segment, i| {
             try writer.print("{}{s}", .{ ip_segment, if (i < self.address.len - 1) "." else "" });
         }
+    }
+
+    pub fn to_network(self: IP_Address) []const u8 {
+        return &self.address;
     }
 };
