@@ -2,6 +2,7 @@
 const std = @import("std");
 const Layer2 = @import("./layer2.zig");
 const Networking = @import("./networking.zig");
+
 // Import the Npcap C declarations natively into Zig
 const pcap = @cImport({
     @cDefine("HAVE_REMOTE", "");
@@ -228,7 +229,22 @@ pub fn run() !void {
         std.debug.print("{X} ", .{byte});
     }
 
+    std.debug.print("\n", .{});
+
+    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // defer arena.deinit();
+    // const allocator = arena.allocator();
+
+    // const addrs = try MAC.getAll(allocator);
+    // for (addrs) |addr| {
+    //     std.debug.print("{x:0>2}\n", .{addr.data});
+    // }
+
     var packet1 = buff;
+
+    const mac = try Networking.MAC_Address.getWifiMac(std.heap.page_allocator);
+    std.debug.print("MAC: {}\n", .{mac});
+
     // var packet = std.mem.zeroes([42]u8);
 
     // // --- Ethernet Header ---

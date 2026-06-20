@@ -15,6 +15,12 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    // Used for getting the MAC address
+    // const mac_address = b.dependency("mac_address", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // }).module("mac_address");
+
     const lib = b.addStaticLibrary(.{
         .name = "Zig Networking",
         // In this case the main source file is merely a path, however, in more
@@ -36,6 +42,13 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // exe.root_module.addImport("mac_address", mac_address);
+
+    if (target.result.os.tag == .windows) {
+        const zigwin32_dep = b.dependency("zigwin32", .{});
+
+        exe.root_module.addImport("win32", zigwin32_dep.module("zigwin32"));
+    }
     exe.addIncludePath(.{ .cwd_relative = "C:\\npcap-sdk\\Include" });
     exe.addLibraryPath(.{ .cwd_relative = "C:\\npcap-sdk\\Lib\\x64" });
 
