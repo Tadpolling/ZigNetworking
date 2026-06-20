@@ -18,8 +18,10 @@ const AdapterOptions = struct {
 };
 
 const IF_TYPE_IEEE80211 = 71; // Standard Windows value for Wi-Fi (802.11)
+const IfOperStatusUp = 1;
 
 pub const MAC_Address = extern struct {
+    pub const broadcast_mac: MAC_Address = MAC_Address{ .address = [_]u8{0xFF} ** 6 };
     address: [6]u8,
 
     pub fn format(
@@ -61,7 +63,7 @@ pub const MAC_Address = extern struct {
         var node: ?*IP_ADAPTER_ADDRESSES_LH = @alignCast(@ptrCast(buf.ptr));
         while (node) |adapter| : (node = node.?.Next) {
             // Check if the adapter is an 802.11 Wireless interface
-            if (adapter.IfType == IF_TYPE_IEEE80211) {
+            if (adapter.IfType == IF_TYPE_IEEE80211 and @intFromEnum(adapter.OperStatus) == IfOperStatusUp) {
                 return MAC_Address{ .address = adapter.PhysicalAddress[0..6].* };
                 // .data = adapter.PhysicalAddress[0..6].*,
                 // .is_loopback = false,

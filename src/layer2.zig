@@ -19,6 +19,10 @@ pub const Ethernet2_Header = extern struct {
         std.debug.print("Destination MAC: {}\n", .{self.destination_mac});
         std.debug.print("Source MAC: {}\n", .{self.source_mac});
     }
+
+    pub fn create_broadcast_header(ethernet_type: u16) !Ethernet2_Header {
+        return Ethernet2_Header{ .destination_mac = Networking.MAC_Address.broadcast_mac, .source_mac = try Networking.MAC_Address.getWifiMac(std.heap.page_allocator), .ether_type = ethernet_type };
+    }
 };
 
 pub const ARP_Packet = extern struct {

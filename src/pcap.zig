@@ -216,12 +216,12 @@ pub fn run() !void {
     defer handle.close_handle();
 
     // 3. Construct your raw Layer 2 Broadcast ARP Frame
-    const ethernet_header = Layer2.Ethernet2_Header{ .source_mac = Networking.MAC_Address{ .address = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 } }, .destination_mac = Networking.MAC_Address{ .address = .{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } }, .ether_type = 0x0806 };
+    // const ethernet_header = Layer2.Ethernet2_Header{ .source_mac = Networking.MAC_Address{ .address = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 } }, .destination_mac = Networking.MAC_Address{ .address = .{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } }, .ether_type = 0x0806 };
 
     const arp_msg = Layer2.ARP_Packet{ .hardware_type = 0x001, .protocol_type = 0x0800, .hardware_length = 6, .protocol_length = 4, .operation_type = 0x001, .sender_mac = Networking.MAC_Address{ .address = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 } }, .sender_ip = Networking.IP_Address{ .address = .{ 192, 168, 1, 50 } }, .destination_mac = .{ .address = .{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }, .destination_ip = .{ .address = .{ 192, 168, 1, 1 } } };
     // try handle.send_packet(std.mem.asBytes(&a));
 
-    var full_message = Layer2.ARP_Full_Packet{ .ethernet_header = ethernet_header, .arp_packet = arp_msg };
+    var full_message = Layer2.ARP_Full_Packet{ .ethernet_header = try Layer2.Ethernet2_Header.create_broadcast_header(0x0806), .arp_packet = arp_msg };
 
     var buff: [@sizeOf(Layer2.ARP_Full_Packet)]u8 = undefined;
     try full_message.to_network(&buff);
@@ -230,15 +230,6 @@ pub fn run() !void {
     }
 
     std.debug.print("\n", .{});
-
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    // defer arena.deinit();
-    // const allocator = arena.allocator();
-
-    // const addrs = try MAC.getAll(allocator);
-    // for (addrs) |addr| {
-    //     std.debug.print("{x:0>2}\n", .{addr.data});
-    // }
 
     var packet1 = buff;
 
