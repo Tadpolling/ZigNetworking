@@ -53,6 +53,7 @@ pub fn build(b: *std.Build) void {
     exe.addLibraryPath(.{ .cwd_relative = "C:\\npcap-sdk\\Lib\\x64" });
 
     exe.linkSystemLibrary("wpcap");
+    exe.linkSystemLibrary("iphlpapi");
     exe.linkLibC();
 
     // This declares intent for the executable to be installed into the

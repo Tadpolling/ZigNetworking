@@ -215,50 +215,17 @@ pub fn run() !void {
 
     defer handle.close_handle();
 
-    // 3. Construct your raw Layer 2 Broadcast ARP Frame
-    // const ethernet_header = Layer2.Ethernet2_Header{ .source_mac = Networking.MAC_Address{ .address = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 } }, .destination_mac = Networking.MAC_Address{ .address = .{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } }, .ether_type = 0x0806 };
-
-    const arp_msg = Layer2.ARP_Packet{ .hardware_type = 0x001, .protocol_type = 0x0800, .hardware_length = 6, .protocol_length = 4, .operation_type = 0x001, .sender_mac = Networking.MAC_Address{ .address = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 } }, .sender_ip = Networking.IP_Address{ .address = .{ 192, 168, 1, 50 } }, .destination_mac = .{ .address = .{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }, .destination_ip = .{ .address = .{ 192, 168, 1, 1 } } };
-    // try handle.send_packet(std.mem.asBytes(&a));
-
-    var full_message = Layer2.ARP_Full_Packet{ .ethernet_header = try Layer2.Ethernet2_Header.create_broadcast_header(0x0806), .arp_packet = arp_msg };
+    const request_ip = Networking.IP_Address{ .address = .{ 192, 168, 1, 1 } };
+    var full_arp_msg = try Layer2.ARP_Full_Packet.create_arp_packet(request_ip);
 
     var buff: [@sizeOf(Layer2.ARP_Full_Packet)]u8 = undefined;
-    try full_message.to_network(&buff);
+    try full_arp_msg.to_network(&buff);
     for (buff) |byte| {
         std.debug.print("{X} ", .{byte});
     }
 
     std.debug.print("\n", .{});
-
-    var packet1 = buff;
-
-    const mac = try Networking.MAC_Address.getWifiMac(std.heap.page_allocator);
-    std.debug.print("MAC: {}\n", .{mac});
-
-    // var packet = std.mem.zeroes([42]u8);
-
-    // // --- Ethernet Header ---
-    // @memset(packet[0..6], 0xFF); // Destination MAC (Broadcast)
-    // packet[6..12].* = .{ 0x74, 0xE5, 0xF9, 0x89, 0x5F, 0xD5 }; // Fake/Real Sender MAC
-    // packet[12] = 0x08;
-    // packet[13] = 0x06; // Type: ARP (0x0806)
-
-    // // --- ARP Payload ---
-    // packet[14..16].* = .{ 0x00, 0x01 }; // Hardware: Ethernet
-    // packet[16..18].* = .{ 0x08, 0x00 }; // Protocol: IPv4
-    // packet[18] = 6; // MAC Size
-    // packet[19] = 4; // IP Size
-    // packet[20..22].* = .{ 0x00, 0x01 }; // Opcode: Request
-
-    // @memcpy(packet[22..28], packet[6..12]); // Sender MAC
-    // packet[28..32].* = .{ 192, 168, 1, 50 }; // Sender IP
-    // @memset(packet[32..38], 0x00); // Target MAC (Blank)
-    // packet[38..42].* = .{ 192, 168, 1, 1 }; // Target IP to resolve
-
-    // // 4. Force inject the raw bytes into the network via Npcap kernel driver
-    // try handle.send_packet(packet[0..]);
-    try handle.send_packet(packet1[0..]);
+    try handle.send_packet(buff[0..]);
 
     std.debug.print("Successfully injected raw ARP frame on Windows via Npcap!\n", .{});
 }

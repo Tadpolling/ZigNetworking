@@ -27,11 +27,11 @@ pub const Ethernet2_Header = extern struct {
 
 pub const ARP_Packet = extern struct {
     const ETH_P_ARP: u16 = 0x0806;
-    hardware_type: u16,
-    protocol_type: u16,
-    hardware_length: u8,
-    protocol_length: u8,
-    operation_type: u16,
+    hardware_type: u16, // Type of network, e.g. ethernet is 1
+    protocol_type: u16, // type depending on if it is IPv4 (has value 0x800) or otherwise
+    hardware_length: u8, // length of hardware address (MAC is 6 bytes so value is 6)
+    protocol_length: u8, // length of network address (IP has 4 bytes so value is 4)
+    operation_type: u16, // 1 for request, 2 for response
     sender_mac: Networking.MAC_Address,
     sender_ip: Networking.IP_Address,
     destination_mac: Networking.MAC_Address,
@@ -68,5 +68,12 @@ pub const ARP_Full_Packet = extern struct {
     pub fn to_network(self: ARP_Full_Packet, buff: []u8) !void {
         try self.ethernet_header.to_network(buff[0..@sizeOf(Ethernet2_Header)]);
         try self.arp_packet.to_network(buff[@sizeOf(Ethernet2_Header)..@sizeOf(ARP_Full_Packet)]);
+    }
+
+    pub fn create_arp_packet(ip_requested: Networking.IP_Address) !ARP_Full_Packet {
+        const ethernet_header = try Ethernet2_Header.create_broadcast_header(ARP_Packet.ETH_P_ARP);
+        const current_ip = (try Networking.IP_Address.get_current_ip()).?;
+        const arp_msg = ARP_Packet{ .hardware_type = 0x001, .protocol_type = 0x0800, .hardware_length = 6, .protocol_length = 4, .operation_type = 0x001, .sender_mac = try Networking.MAC_Address.getWifiMac(std.heap.page_allocator), .sender_ip = current_ip, .destination_mac = .{ .address = .{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }, .destination_ip = ip_requested };
+        return ARP_Full_Packet{ .ethernet_header = ethernet_header, .arp_packet = arp_msg };
     }
 };
