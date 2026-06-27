@@ -112,7 +112,7 @@ pub const PcapPacketRecordHeader = extern struct {
 
 pub const Pcap_Handle = struct {
     device_name: [*c]u8,
-    handle: ?*pcap.pcap_t, // The type of this object is unclear
+    handle: ?*pcap.pcap_t,
 
     pub fn create_handle(device_name: [*c]u8) !Pcap_Handle {
         var errbuf: [pcap.PCAP_ERRBUF_SIZE]u8 = undefined;
@@ -217,7 +217,12 @@ pub fn run() !void {
 
     const request_ip = Networking.IP_Address{ .address = .{ 192, 168, 1, 1 } };
     var full_arp_msg = try Layer2.ARP_Full_Packet.create_arp_packet(request_ip);
+    const current_ip = (try Networking.IP_Address.get_current_ip()).?;
 
+    const arp_msg = Layer2.ARP_Packet{ .hardware_type = 0x001, .protocol_type = 0x0800, .hardware_length = 6, .protocol_length = 4, .operation_type = 0x001, .sender_mac = try Networking.MAC_Address.getWifiMac(std.heap.page_allocator), .sender_ip = current_ip, .destination_mac = .{ .address = .{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }, .destination_ip = request_ip };
+
+    var buff1: [@sizeOf(Layer2.ARP_Packet)]u8 = undefined;
+    try arp_msg.to_network(&buff1);
     var buff: [@sizeOf(Layer2.ARP_Full_Packet)]u8 = undefined;
     try full_arp_msg.to_network(&buff);
     for (buff) |byte| {

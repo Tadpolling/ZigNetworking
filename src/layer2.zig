@@ -77,3 +77,75 @@ pub const ARP_Full_Packet = extern struct {
         return ARP_Full_Packet{ .ethernet_header = ethernet_header, .arp_packet = arp_msg };
     }
 };
+
+pub const TLV = struct {
+    // Type is 7 bits, length is 9 bits
+    type_length: u16,
+
+    // Length is the length seen in the length field
+    value: []const u8,
+
+    pub inline fn get_length(self: TLV) u16 {
+        return get_length_from_type_length(self.type_length);
+    }
+
+    pub inline fn get_length_from_type_length(type_length: u16) u16 {
+        // We want to get the last 9 bits and ignore the first 7 bits so we do a logical and removing
+        // the first 7 bits.
+        return 0x01FF & type_length;
+    }
+
+    pub inline fn get_type(self: TLV) u8 {
+        // shifting to the right to remove the first 9 bits and then downsizing to be a u8
+        return @intCast(self.type_length >> 9);
+    }
+
+    pub fn create_TLV(type_length: u16, value_array: []const u8) !TLV {
+        return TLV{ .type_length = type_length, .value = value_array };
+    }
+
+    pub inline fn is_final_tlv(self: TLV) bool {
+        return self.type_length == 0;
+    }
+
+    pub fn print(self: TLV) void {
+        std.debug.print("Type: {d}\nLength: {d}\n", .{ self.get_type(), self.get_length() });
+        std.debug.print("Value: ", .{});
+        for (self.value) |byte| {
+            std.debug.print("{x:0>2} ", .{byte});
+        }
+        std.debug.print("\n", .{});
+    }
+};
+
+pub const LLDPDU = struct {
+    tlv_array: []TLV,
+
+    pub fn create_lldpdu(buff: []const u8) !LLDPDU {
+        var should_continue = true;
+        var tlv_list = std.ArrayList(TLV);
+        var current_tlv: TLV = undefined;
+        var buff_length: u16 = undefined;
+        var type_length: u16 = undefined;
+        while (should_continue) {
+            type_length = @intCast(buff[0..2]);
+            buff_length = TLV.get_length_from_type_length(type_length);
+            current_tlv = TLV.create_TLV(type_length, buff[0..buff_length]);
+            if (current_tlv.is_final_tlv()) should_continue = false;
+            tlv_list.addOne(current_tlv);
+        }
+
+        return LLDPDU{ .tlv_array = try tlv_list.toOwnedSlice() };
+    }
+};
+
+pub const LLDP = struct {
+    ethernet_header: Ethernet2_Header,
+    lldpdu: LLDPDU,
+
+    pub fn parse_lldp_packet(buff: []const u8) !LLDP {
+        const ethernet_header = Ethernet2_Header{ .destination_mac = Networking.MAC_Address{ .address = buff[0..6] }, .source_mac = Networking.MAC_Address{ .address = buff[6..12] }, .ether_type = @intCast(buff[12..14]) };
+        const lldpu = LLDPDU.create_lldpdu(buff[14..]);
+        return LLDP{ .ethernet_header = ethernet_header, .lldpdu = lldpu };
+    }
+};
